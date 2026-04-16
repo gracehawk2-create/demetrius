@@ -1,64 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My First Game</title>
+    <title>Collins Mysteries: Tag & Pets</title>
     <style>
-        canvas { background: #eee; display: block; margin: 0 auto; border: 2px solid #333; }
+        body { margin: 0; background: #1a1a1a; color: white; font-family: sans-serif; overflow: hidden; }
+        canvas { display: block; background: #2c3e50; margin: 20px auto; border: 4px solid #ecf0f1; }
+        #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; }
+        .shop-menu { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                     background: #34495e; padding: 20px; border: 2px solid gold; border-radius: 10px; text-align: center; }
+        button { padding: 10px; margin: 5px; cursor: pointer; background: #27ae60; color: white; border: none; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
 
-        let score = 0;
-        let player = { x: 175, y: 350, w: 50, h: 20, speed: 7 };
-        let item = { x: Math.random() * 380, y: 0, size: 15, speed: 3 };
+<div id="ui">
+    <div>Coins: <span id="money">0</span></div>
+    <div>Status: <span id="status">Exploring...</span></div>
+    <p>Use WASD to Move. Reach the Yellow/Pink zones for Shops.</p>
+</div>
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw Player
-            ctx.fillStyle = "blue";
-            ctx.fillRect(player.x, player.y, player.w, player.h);
+<!-- Pet Shop Menu -->
+<div id="petShop" class="shop-menu">
+    <h2>🐾 Collins Pet Shop</h2>
+    <p>Buy a Speed Cat (50 Coins)</p>
+    <button onclick="buyPet('cat')">Buy Cat</button>
+    <button onclick="closeShops()">Close</button>
+</div>
 
-            // Draw Item
-            ctx.fillStyle = "red";
-            ctx.beginPath();
-            ctx.arc(item.x, item.y, item.size, 0, Math.PI*2);
-            ctx.fill();
+<canvas id="gameCanvas"></canvas>
 
-            // Move Item
-            item.y += item.speed;
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 600;
 
-            // Catch Logic
-            if(item.y + item.size > player.y && item.x > player.x && item.x < player.x + player.w) {
-                score++;
-                item.y = 0;
-                item.x = Math.random() * 380;
-                item.speed += 0.2;
-            }
+let player = { x: 400, y: 300, size: 20, speed: 4, color: '#3498db', coins: 0 };
+let ai = { x: 50, y: 50, size: 20, speed: 2.5, color: '#e74c3c' };
+let shops = [
+    { name: 'Normal Shop', x: 50, y: 500, w: 60, h: 60, color: '#f1c40f' },
+    { name: 'Pet Shop', x: 700, y: 100, w: 60, h: 60, color: '#e84393' }
+];
 
-            // Game Over
-            if(item.y > canvas.height) {
-                alert("Game Over! Score: " + score);
-                document.location.reload();
-            }
+let keys = {};
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
 
-            // Score
-            ctx.fillStyle = "black";
-            ctx.fillText("Score: " + score, 10, 20);
+function buyPet(type) {
+    if (player.coins >= 50) {
+        player.coins -= 50;
+        player.speed += 2;
+        document.getElementById('status').innerText = "Bought a Speed Cat!";
+        closeShops();
+    }
+}
 
-            requestAnimationFrame(draw);
+function closeShops() { document.getElementById('petShop').style.display = 'none'; }
+
+function update() {
+    // Player Movement
+    if (keys['KeyW']) player.y -= player.speed;
+    if (keys['KeyS']) player.y += player.speed;
+    if (keys['KeyA']) player.x -= player.speed;
+    if (keys['KeyD']) player.x += player.speed;
+
+    // Advanced AI Logic (Predictive Tracking)
+    let dx = player.x - ai.x;
+    let dy = player.y - ai.y;
+    let distance = Math.sqrt(dx*dx + dy*dy);
+    
+    // AI catches player
+    if (distance < player.size) {
+        player.x = 400; player.y = 300;
+        player.coins = Math.max(0, player.coins - 10);
+        document.getElementById('status').innerText = "TAGGED! You lost coins.";
+    }
+
+    // AI Movement
+    ai.x += (dx / distance) * ai.speed;
+    ai.y += (dy / distance) * ai.speed;
+
+    // Shop Collisions
+    shops.forEach(s => {
+        if (player.x > s.x && player.x < s.x + s.w && player.y > s.y && player.y < s.y + s.h) {
+            if (s.name === 'Pet Shop') document.getElementById('petShop').style.display = 'block';
         }
+    });
 
-        window.addEventListener("keydown", (e) => {
-            if(e.key === "ArrowLeft" && player.x > 0) player.x -= player.speed;
-            if(e.key === "ArrowRight" && player.x < canvas.width - player.w) player.x += player.speed;
-        });
+    // Earn money over time
+    player.coins += 0.01;
+    document.getElementById('money').innerText = Math.floor(player.coins);
+}
 
-        draw();
-    </script>
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw Shops
+    shops.forEach(s => {
+        ctx.fillStyle = s.color;
+        ctx.fillRect(s.x, s.y, s.w, s.h);
+        ctx.fillStyle = "white";
+        ctx.fillText(s.name, s.x, s.y - 5);
+    });
+
+    // Draw Entities
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.size, player.size);
+    
+    ctx.fillStyle = ai.color;
+    ctx.fillRect(ai.x, ai.y, ai.size, ai.size);
+
+    requestAnimationFrame(() => { update(); draw(); });
+}
+
+draw();
+</script>
 </body>
 </html>

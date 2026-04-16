@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chromebook Uno</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; }
+        .card { width: 70px; height: 100px; border-radius: 8px; display: inline-block; margin: 5px; cursor: pointer; border: 2px solid white; line-height: 100px; font-weight: bold; font-size: 20px; }
+        .red { background: #e53935; } .blue { background: #1e88e5; }
+        .green { background: #43a047; } .yellow { background: #fdd835; color: black; }
+        .game-area { margin: 20px auto; padding: 20px; background: #333; width: 80%; border-radius: 15px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>💻 Chromebook Uno</h1>
+    <div class="game-area">
+        <p>Top Card: <span id="top-card-display"></span></p>
+        <p>Opponent has <span id="bot-count">?</span> cards</p>
+        <h2 id="status">Your turn!</h2>
+        <div id="hand"></div>
+        <br>
+        <button onclick="drawCard()">Draw Card</button>
+        <button id="pass-btn" style="display:none;" onclick="passTurn()">Pass Turn</button>
+    </div>
+
+    <script>
+        const colors = ['red', 'blue', 'green', 'yellow'];
+        const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Skip'];
+        let deck = [], playerHand = [], botHand = [], topCard = null;
+
+        function init() {
+            deck = [];
+            colors.forEach(c => values.forEach(v => deck.push({color: c, value: v})));
+            deck.sort(() => Math.random() - 0.5);
+            playerHand = deck.splice(0, 7);
+            botHand = deck.splice(0, 7);
+            topCard = deck.pop();
+            render();
+        }
+
+        function render() {
+            const handDiv = document.getElementById('hand');
+            handDiv.innerHTML = '';
+            playerHand.forEach((c, i) => {
+                const d = document.createElement('div');
+                d.className = `card ${c.color}`; d.innerText = c.value;
+                d.onclick = () => playCard(i);
+                handDiv.appendChild(d);
+            });
+            document.getElementById('top-card-display').innerHTML = `<div class="card ${topCard.color}">${topCard.value}</div>`;
+            document.getElementById('bot-count').innerText = botHand.length;
+        }
+
+        function playCard(i) {
+            const c = playerHand[i];
+            if (c.color === topCard.color || c.value === topCard.value) {
+                topCard = playerHand.splice(i, 1)[0];
+                if (playerHand.length === 0) return alert("You Win!");
+                render();
+                setTimeout(botTurn, 800);
+            }
+        }
+
+        function botTurn() {
+            let m = botHand.findIndex(c => c.color === topCard.color || c.value === topCard.value);
+            if (m !== -1) topCard = botHand.splice(m, 1)[0];
+            else botHand.push(deck.pop());
+            if (botHand.length === 0) alert("Bot Wins!");
+            render();
+        }
+
+        function drawCard() {
+            playerHand.push(deck.pop());
+            render();
+            document.getElementById('pass-btn').style.display = 'inline';
+        }
+
+        function passTurn() {
+            document.getElementById('pass-btn').style.display = 'none';
+            botTurn();
+        }
+
+        init();
+    </script>
+</body>
+</html>

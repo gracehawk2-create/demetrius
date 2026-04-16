@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hoverboard Pro: Admin Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; color: white; }
+        canvas { display: block; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .hud { position: absolute; font-size: 24px; text-shadow: 0 0 10px #0ff; }
+        #score-display { top: 20px; left: 20px; color: #00fff2; }
+        
+        /* Admin Panel Styles */
+        #admin-panel { 
+            position: absolute; bottom: 20px; right: 20px; background: rgba(20, 20, 20, 0.95); 
+            border: 2px solid #ff0000; padding: 15px; display: none; pointer-events: auto; width: 200px;
+        }
+        #admin-panel h4 { margin: 0 0 10px 0; color: #ff0000; text-align: center; border-bottom: 1px solid #ff0000; }
+        .admin-btn { background: #300; color: #ff0000; border: 1px solid #ff0000; width: 100%; margin: 3px 0; cursor: pointer; font-size: 11px; padding: 5px; }
+        .admin-btn:hover { background: #ff0000; color: #000; }
+        
+        #overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); border: 2px solid #0ff; padding: 30px; pointer-events: auto; text-align: center; }
+        button { background: #0ff; border: none; padding: 12px 25px; cursor: pointer; font-family: inherit; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div id="score-display" class="hud">Score: 0</div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel">
+        <h4>ADMIN CONSOLE</h4>
+        <button class="admin-btn" onclick="nuke()">☢️ NUKE SCREEN</button>
+        <button class="admin-btn" onclick="addMoney()">💰 ADD 999k CREDITS</button>
+        <button class="admin-btn" onclick="toggleGod()">🛡️ TOGGLE INVINCIBLE</button>
+        <button class="admin-btn" onclick="spawnBoss()">👾 FORCE BOSS</button>
+        <div style="font-size: 9px; color: #555; margin-top: 5px;">Admin Mode Active</div>
+    </div>
+
+    <div id="overlay">
+        <h2 id="title">HOVERBOARD PRO</h2>
+        <p>Press 'M' for Admin Login</p>
+        <button onclick="startGame()">START GAME</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// --- ADMIN SYSTEM ---
+let isAdmin = false;
+let isInvincible = false;
+const ADMIN_PASS = "ADMIN123"; // Change this to your secret password!
+
+window.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "m") {
+        let pass = prompt("ENTER MASTER PASSWORD:");
+        if (pass === ADMIN_PASS) {
+            isAdmin = true;
+            document.getElementById("admin-panel").style.display = "block";
+            alert("ADMIN ACCESS GRANTED");
+        }
+    }
+});
+
+function nuke() { obstacles.length = 0; }
+function addMoney() { alert("Credits set to 999,999!"); } // Connect to your shop logic
+function toggleGod() { isInvincible = !isInvincible; }
+function spawnBoss() { score = 1499; }
+
+// --- GAME LOGIC ---
+let score = 0, gameOver = true, frame = 0;
+const player = { x: canvas.width/2, y: canvas.height-100, w: 70, h: 15 };
+const obstacles = [];
+
+window.addEventListener("mousemove", (e) => player.x = e.clientX - player.w/2);
+
+function startGame() {
+    document.getElementById("overlay").style.display = "none";
+    score = 0; gameOver = false; frame = 0; obstacles.length = 0;
+    animate();
+}
+
+function update() {
+    if (gameOver) return;
+    frame++;
+
+    if (frame % 30 === 0) {
+        obstacles.push({ x: Math.random()*canvas.width, y: -40, w: 40, h: 40, speed: 6 });
+    }
+
+    obstacles.forEach((obs, index) => {
+        obs.y += obs.speed;
+        if (player.x < obs.x+obs.w && player.x+player.w > obs.x && player.y < obs.y+obs.h && player.y+player.h > obs.y) {
+            if (!isInvincible) {
+                gameOver = true;
+                document.getElementById("overlay").style.display = "block";
+            } else {
+                obstacles.splice(index, 1);
+            }
+        }
+        if (obs.y > canvas.height) { obstacles.splice(index, 1); score += 10; }
+    });
+}
+
+function animate() {
+    if (gameOver) return;
+    ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width,canvas.height);
+    
+    // Player
+    ctx.fillStyle = isInvincible ? "#ff0000" : "#00ffff";
+    ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+
+    // Obstacles
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#444";
+    obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.w, o.h));
+
+    update(); requestAnimationFrame(animate);
+    document.getElementById("score-display").innerText = "Score: " + score;
+}
+</script>
+</body>
+</html>
