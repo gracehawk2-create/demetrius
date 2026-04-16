@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My First Game</title>
+    <style>
+        canvas { background: #eee; display: block; margin: 0 auto; border: 2px solid #333; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let score = 0;
+        let player = { x: 175, y: 350, w: 50, h: 20, speed: 7 };
+        let item = { x: Math.random() * 380, y: 0, size: 15, speed: 3 };
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Player
+            ctx.fillStyle = "blue";
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+
+            // Draw Item
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, item.size, 0, Math.PI*2);
+            ctx.fill();
+
+            // Move Item
+            item.y += item.speed;
+
+            // Catch Logic
+            if(item.y + item.size > player.y && item.x > player.x && item.x < player.x + player.w) {
+                score++;
+                item.y = 0;
+                item.x = Math.random() * 380;
+                item.speed += 0.2;
+            }
+
+            // Game Over
+            if(item.y > canvas.height) {
+                alert("Game Over! Score: " + score);
+                document.location.reload();
+            }
+
+            // Score
+            ctx.fillStyle = "black";
+            ctx.fillText("Score: " + score, 10, 20);
+
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if(e.key === "ArrowLeft" && player.x > 0) player.x -= player.speed;
+            if(e.key === "ArrowRight" && player.x < canvas.width - player.w) player.x += player.speed;
+        });
+
+        draw();
+    </script>
+</body>
+</html>
